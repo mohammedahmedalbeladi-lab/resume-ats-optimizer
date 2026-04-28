@@ -1,11 +1,8 @@
 import streamlit as st
 from docx import Document
-from docx2pdf import convert
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 import os
-import platform
-import pythoncom
 
 st.set_page_config(page_title="Resume Generator", page_icon="📄")
 st.title("Resume ATS Optimizer")
@@ -35,16 +32,11 @@ def replace_simple(paragraph, old_text, new_text, size=8, bold=False, align=None
 
 
 def replace_multiline(paragraph, text, size=8, bold=False, align=WD_ALIGN_PARAGRAPH.LEFT):
-    """
-    يستبدل الـ placeholder بعدة أسطر بنفس تنسيق مضبوط
-    بدون ما يرث تنسيق العنوان أو الـ placeholder
-    """
     lines = [line.strip() for line in str(text).splitlines() if line.strip()]
 
     parent = paragraph._element.getparent()
     index = parent.index(paragraph._element)
 
-    # أول سطر مكان الـ placeholder
     clear_paragraph(paragraph)
     paragraph.alignment = align
     paragraph.paragraph_format.space_before = Pt(0)
@@ -55,7 +47,6 @@ def replace_multiline(paragraph, text, size=8, bold=False, align=WD_ALIGN_PARAGR
         run = paragraph.add_run(lines[0])
         set_run_style(run, size=size, bold=bold)
 
-    # باقي الأسطر
     for line in lines[1:]:
         new_p = paragraph.insert_paragraph_before("")
         parent.remove(new_p._element)
@@ -225,8 +216,6 @@ if st.button("توليد السيرة الذاتية"):
             replace_text_in_doc(doc, data)
 
             output_docx = os.path.join(script_dir, "Final_Resume.docx")
-            output_pdf = os.path.join(script_dir, "Final_Resume.pdf")
-
             doc.save(output_docx)
 
             with open(output_docx, "rb") as file:
@@ -237,21 +226,7 @@ if st.button("توليد السيرة الذاتية"):
                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
 
-            if platform.system() == "Windows":
-                pythoncom.CoInitialize()
-                convert(output_docx, output_pdf)
-
-                with open(output_pdf, "rb") as file:
-                    st.download_button(
-                        label="تحميل PDF",
-                        data=file,
-                        file_name="Final_Resume.pdf",
-                        mime="application/pdf"
-                    )
-
-                st.success("تم إنشاء Word و PDF بنجاح.")
-            else:
-                st.warning("تم إنشاء Word فقط. تحويل PDF يحتاج Windows + Microsoft Word.")
+            st.success("تم إنشاء ملف Word بنجاح.")
 
         except Exception as e:
             st.error(f"حدث خطأ: {e}")
